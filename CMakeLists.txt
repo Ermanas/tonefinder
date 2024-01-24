@@ -10,6 +10,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # My Include Directory
 include_directories(${PROJECT_SOURCE_DIR})
+# Add Test Folder
+add_subdirectory(${PROJECT_SOURCE_DIR}/external)
 # My Library Directory
 add_subdirectory(${PROJECT_SOURCE_DIR}/tonefinder)
 # My Examples Directory
@@ -17,5 +19,3 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
 
 # Enable testing for this project
 include(CTest)
-# Add Test Folder
-add_subdirectory(${PROJECT_SOURCE_DIR}/external)
