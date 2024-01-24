@@ -1,0 +1,5 @@
+add_executable(microphone_monitor microphone_monitor.cpp)
+target_link_libraries(microphone_monitor PRIVATE PortAudio)
+
+add_executable(microphone_monitor_class microphone_monitor_class.cpp)
+target_link_libraries(microphone_monitor_class PRIVATE PortAudio)
