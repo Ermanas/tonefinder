@@ -2,8 +2,9 @@
 #include <cstring>
 #include "portaudio.h"
 
-#define SAMPLE_RATE 48000
+#define SAMPLE_RATE 48000.0
 #define FRAMES_PER_BUFFER 512
+#define NUM_OF_CHANNELS 2
 
 class AudioDevice
 {
@@ -89,19 +90,11 @@ void AudioDevice::chooseDevice(unsigned int chosen_device)
     this->device = chosen_device;
 
     memset(&inputParameters, 0, sizeof(inputParameters));
-    inputParameters.channelCount = 2;
+    inputParameters.channelCount = NUM_OF_CHANNELS;
     inputParameters.device = device;
     inputParameters.hostApiSpecificStreamInfo = NULL;
     inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo(device)->defaultLowInputLatency;
-    checkErr();
-
-    memset(&outputParameters, 0, sizeof(outputParameters));
-    outputParameters.channelCount = 2;
-    outputParameters.device = device;
-    outputParameters.hostApiSpecificStreamInfo = NULL;
-    outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = Pa_GetDeviceInfo(device)->defaultLowOutputLatency;
     checkErr();
 }
 
@@ -110,7 +103,7 @@ void AudioDevice::startStream(unsigned int duration_in_s)
     err = Pa_OpenStream(
         &stream,
         &inputParameters,
-        &outputParameters,
+        NULL,
         SAMPLE_RATE,
         FRAMES_PER_BUFFER,
         paNoFlag,
