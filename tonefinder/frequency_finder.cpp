@@ -8,6 +8,7 @@
 #define NUM_OF_CHANNELS 2
 #define FREQ_START 0
 #define FREQ_END 20000
+#define VOLUME_TRESHOLD 0.2
 
 class AudioDevice
 {
@@ -32,6 +33,7 @@ private:
         fftw_plan myFFTPlan;
         int startIndex;
         int frequencySize;
+        double dominantFrequency;
     } streamCallbackData;
     static streamCallbackData *frequencyData;
 
@@ -39,7 +41,7 @@ public:
     AudioDevice();
     ~AudioDevice();
     void listDevices();
-    void chooseDevice(PaDeviceIndex chosen_device);
+    void chooseDevice(PaDeviceIndex chosen_device = Pa_GetDefaultInputDevice());
     void startStream(unsigned int duration_in_s);
     void stopStream();
 };
@@ -101,6 +103,8 @@ void AudioDevice::chooseDevice(PaDeviceIndex chosen_device)
 {
     this->device = chosen_device;
 
+    std::cout << "Device " << this->device << " selected." << std::endl;
+
     // TO DO
     // Device availability control
 
@@ -126,7 +130,7 @@ AudioDevice::streamCallbackData *AudioDevice::frequencyData = nullptr;
 void AudioDevice::startStream(unsigned int duration_in_s)
 {
     // Allocate the data to be used for the FFT process
-    frequencyData = (streamCallbackData *)malloc(sizeof(streamCallbackData)); 
+    frequencyData = (streamCallbackData *)malloc(sizeof(streamCallbackData));
     frequencyData->inData = (double *)fftw_malloc(sizeof(double) * FRAMES_PER_BUFFER);
     frequencyData->outData = (double *)fftw_malloc(sizeof(double) * FRAMES_PER_BUFFER);
     if (frequencyData->inData == NULL || frequencyData->outData == NULL)
@@ -201,7 +205,7 @@ int AudioDevice::streamCallBack(
     }
 
     fftw_execute(callbackData->myFFTPlan);
-    //fftw_execute_r2r(callbackData->myFFTPlan, callbackData->inData, callbackData->outData);
+    // fftw_execute_r2r(callbackData->myFFTPlan, callbackData->inData, callbackData->outData);
 
     double maxAmplitude = 0;
     int maxIndex = 0;
@@ -218,8 +222,19 @@ int AudioDevice::streamCallBack(
     }
 
     // Calculate the dominant frequency in Hz
-    double dominantFrequency = static_cast<double>(maxIndex) * SAMPLE_RATE / FRAMES_PER_BUFFER;
-    std::cout << "Dominant Frequency: " << dominantFrequency << " Hz" << std::endl;
+    // Consider the signal if it's louder than a certain volume.
+    float vol_r = 0, vol_l = 0;
+
+    // Find the max volume for each channel (Normalized)
+    for (unsigned int i = 0; i < framesPerBuffer * 2; i += 2)
+    {
+        vol_l = std::max(vol_l, std::abs(inBuff[i]));
+        vol_r = std::max(vol_r, std::abs(inBuff[i + 1]));
+    }
+
+    if (vol_l >= VOLUME_TRESHOLD || vol_r >= VOLUME_TRESHOLD)
+        frequencyData->dominantFrequency = static_cast<double>(maxIndex) * SAMPLE_RATE / FRAMES_PER_BUFFER;
+    std::cout << "Dominant Frequency: " << frequencyData->dominantFrequency << " Hz" << std::endl;
 
     std::cout << std::flush;
     return paContinue;
